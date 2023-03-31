@@ -1,0 +1,36 @@
+stages:
+  - plan
+  - apply
+  - destroy
+
+.terraform:
+  image: 
+    name: hashicorp/terraform:latest
+    entrypoint:
+      - '/bin/sh'
+      - '-c'
+  before_script:
+    - terraform init
+
+plan:
+  extends: .terraform
+  stage: plan
+  script:
+    - terraform plan -out=planfile
+  artifacts:
+    paths:
+      - planfile
+
+apply:
+  extends: .terraform
+  stage: apply
+  script:
+    - terraform apply -auto-approve planfile
+  when: manual
+
+destroy:
+  extends: .terraform
+  stage: destroy
+  script:
+    - terraform destroy -auto-approve
+  when: manual
