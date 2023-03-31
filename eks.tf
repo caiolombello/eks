@@ -7,6 +7,9 @@ resource "aws_security_group" "cluster" {
     "Name"                                       = "${local.name_suffix}-eks-cluster-sg"
     "kubernetes.io/cluster/${local.name_suffix}" = "owned"
   })
+  depends_on = [
+    module.vpc.aws_subnets
+  ]
 }
 
 resource "aws_security_group_rule" "cluster_egress_internet" {
@@ -17,6 +20,9 @@ resource "aws_security_group_rule" "cluster_egress_internet" {
   from_port         = 0
   to_port           = 0
   type              = "egress"
+  depends_on = [
+    module.vpc.aws_subnets
+  ]
 }
 
 resource "aws_security_group_rule" "cluster_https_worker_ingress" {
@@ -27,6 +33,9 @@ resource "aws_security_group_rule" "cluster_https_worker_ingress" {
   from_port         = 443
   to_port           = 443
   type              = "ingress"
+  depends_on = [
+    module.vpc.aws_subnets
+  ]
 }
 
 # Create EKS Cluster
@@ -36,21 +45,22 @@ resource "aws_eks_cluster" "this" {
   role_arn                  = aws_iam_role.cluster.arn
   enabled_cluster_log_types = ["api", "audit"] #Enable audit logs
 
+  # Ensure that IAM Role permissions are created before and deleted after EKS Cluster handling.
+  # Otherwise, EKS will not be able to properly delete EKS managed EC2 infrastructure such as Security Groups.
+  depends_on = [
+    module.vpc,
+    aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,
+    aws_iam_role_policy_attachment.ClusterIAMFullAccess,
+    aws_cloudwatch_log_group.this
+  ]
+
   vpc_config {
     subnet_ids              = data.aws_subnets.subnet-private.ids
     endpoint_private_access = true
     endpoint_public_access  = true
     security_group_ids      = [aws_security_group.cluster.id]
   }
-
-  # Ensure that IAM Role permissions are created before and deleted after EKS Cluster handling.
-  # Otherwise, EKS will not be able to properly delete EKS managed EC2 infrastructure such as Security Groups.
-  depends_on = [
-    aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
-    aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,
-    aws_iam_role_policy_attachment.ClusterIAMFullAccess,
-    aws_cloudwatch_log_group.this
-  ]
   tags = var.resource_tags
 }
 
@@ -115,6 +125,8 @@ resource "aws_eks_node_group" "workers" {
   #}
 
   depends_on = [
+    module.vpc,
+    aws_eks_cluster.this,
     aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
     aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,
     aws_iam_role_policy_attachment.WorkersIAMFullAccess,
@@ -129,6 +141,9 @@ data "aws_subnets" "subnet-public" {
     name   = "tag:${local.name_suffix}-${local.environment}-public"
     values = ["shared"]
   }
+  depends_on = [
+    module.vpc
+  ]
 }
 
 #Retrieve private subnet
@@ -137,6 +152,9 @@ data "aws_subnets" "subnet-private" {
     name   = "tag:${local.name_suffix}-${local.environment}-private"
     values = ["shared"]
   }
+  depends_on = [
+    module.vpc
+  ]
 }
 
 # Schedule

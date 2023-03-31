@@ -14,7 +14,7 @@ module "vpc" {
   tags = var.resource_tags
 
   public_subnet_tags = {
-    "${aws_eks_cluster.this.name}-public" = "shared"
+    "${local.name_suffix}-${local.environment}-public" = "shared"
   }
 
   private_subnet_tags = {

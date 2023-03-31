@@ -32,8 +32,12 @@ resource "null_resource" "update_kubeconfig" {
 }
 
 data "local_file" "kubeconfig" {
-  depends_on = [null_resource.update_kubeconfig]
-  filename   = "${path.module}/temp_kubeconfig.yaml"
+  depends_on = [
+    null_resource.update_kubeconfig,
+    aws_eks_cluster.this,
+    aws_eks_node_group.workers
+  ]
+  filename = "${path.module}/temp_kubeconfig.yaml"
 }
 
 provider "kubernetes" {
