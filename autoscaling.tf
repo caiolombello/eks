@@ -9,6 +9,10 @@ resource "aws_autoscaling_schedule" "monrise" {
   start_time             = "${local.today_date}T21:00:00Z" #UTC time
   time_zone              = "America/Sao_Paulo"
   autoscaling_group_name = aws_eks_node_group.workers[each.key].resources[0].autoscaling_groups[0].name
+
+  depends_on = [
+    aws_eks_node_group.workers
+  ]
 }
 
 resource "aws_autoscaling_schedule" "sunrise" {
@@ -21,6 +25,10 @@ resource "aws_autoscaling_schedule" "sunrise" {
   start_time             = "${local.tomorrow_date}T12:00:00Z" #UTC time
   time_zone              = "America/Sao_Paulo"
   autoscaling_group_name = aws_eks_node_group.workers[each.key].resources[0].autoscaling_groups[0].name
+
+  depends_on = [
+    aws_eks_node_group.workers
+  ]
 }
 
 # Set up the CloudWatch agent to collect cluster metrics
@@ -28,15 +36,21 @@ resource "null_resource" "apply-cloudwatch-agent" {
   for_each = toset(local.manifests_urls)
 
   provisioner "local-exec" {
-    command = format("kubectl apply -f %s",
+    command = format("kubectl apply --kubeconfig %s -f %s",
+      data.local_file.kubeconfig.filename,
       each.value
     )
   }
+
+  depends_on = [
+    aws_eks_node_group.workers
+  ]
 }
 
 resource "null_resource" "apply-cloudwatch-agent-config" {
   provisioner "local-exec" {
-    command = format("kubectl apply -f - <<EOF\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: cwagentconfig\n  namespace: amazon-cloudwatch\ndata:\n  cwagentconfig.json: |\n    %s\nEOF",
+    command = format("kubectl apply --kubeconfig %s -f - <<EOF\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: cwagentconfig\n  namespace: amazon-cloudwatch\ndata:\n  cwagentconfig.json: |\n    %s\nEOF",
+      data.local_file.kubeconfig.filename,
       jsonencode({
         "logs" : {
           "metrics_collected" : {
@@ -52,7 +66,7 @@ resource "null_resource" "apply-cloudwatch-agent-config" {
   }
 
   depends_on = [
-    aws_eks_cluster.this,
+    null_resource.apply-cloudwatch-agent,
     aws_eks_node_group.workers
   ]
 }
@@ -100,6 +114,10 @@ resource "aws_cloudwatch_metric_alarm" "node_memory_utilization_alarm" {
   statistic = "Average"
 
   datapoints_to_alarm = "1"
+
+  depends_on = [
+    aws_eks_node_group.workers
+  ]
 }
 
 

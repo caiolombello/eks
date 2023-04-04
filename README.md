@@ -1,5 +1,9 @@
 # Managed Kubernetes on AWS
 
+- [x] Autoscaling por Memória dos Nodes
+- [x] Autoscaling por CPU dos Nodes
+- [x] Criação de usuário para acesso ao Cluster através da AWS
+
 ## Access Cluster
 
 Retrieve generated IAM data:
