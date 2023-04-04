@@ -51,7 +51,7 @@ resource "aws_eks_node_group" "workers" {
   node_group_name      = lookup(each.value, "name", null) == null ? "nodes-${local.name_suffix}-${local.environment}" : null
   cluster_name         = aws_eks_cluster.this.id
   node_role_arn        = aws_iam_role.workers.arn # IAM Role that provides permissions for the EKS Node Group.
-  subnet_ids           = [data.aws_subnets.subnet-private.ids[0]]
+  subnet_ids           = data.aws_subnets.subnet-private.ids
   ami_type             = lookup(each.value, "ami_type", null) # Type of Amazon Machine Image (AMI) associated with the EKS Node Group
   disk_size            = lookup(each.value, "disk_size", null)
   instance_types       = lookup(each.value, "instance_types", null)
