@@ -105,7 +105,6 @@ variable "node_groups" {
       instance_types   = ["t3a.medium"]
       capacity_type    = "ON_DEMAND"
       disk_size        = 10
-
     }
   }
 }

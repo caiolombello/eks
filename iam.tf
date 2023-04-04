@@ -69,6 +69,10 @@ resource "aws_iam_role_policy_attachment" "AmazonEBSCSIDriverPolicy" {
   role       = aws_iam_role.workers.name
 }
 
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent_attach" {
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+  role       = aws_iam_role.workers.name
+}
 
 resource "aws_iam_instance_profile" "workers" {
   name_prefix = aws_eks_cluster.this.name

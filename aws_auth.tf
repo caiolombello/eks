@@ -29,7 +29,8 @@ output "root_user_secret_access_key" {
 resource "kubernetes_config_map" "aws_auth" {
   depends_on = [
     aws_eks_cluster.this,
-    aws_eks_node_group.workers
+    aws_eks_node_group.workers,
+    data.local_file.kubeconfig
   ]
 
   metadata {

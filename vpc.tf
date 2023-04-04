@@ -24,7 +24,7 @@ module "vpc" {
 
 # Logs
 # Create bucket for storage the vpc logs
-resource "aws_s3_bucket" "this" {
+resource "aws_s3_bucket" "vpc" {
   bucket        = "logs-vpc-${local.name_suffix}-${local.environment}"
   force_destroy = true
   tags          = var.resource_tags
@@ -32,14 +32,72 @@ resource "aws_s3_bucket" "this" {
 
 # Active de logs on VPC
 resource "aws_flow_log" "liferay" {
-  log_destination      = aws_s3_bucket.this.arn
+  log_destination      = aws_s3_bucket.vpc.arn
   log_destination_type = "s3"
   traffic_type         = "ALL"
   vpc_id               = module.vpc.vpc_id
 }
 
 
+# Cluster Security Group
+resource "aws_security_group" "cluster" {
+  name_prefix = local.name_suffix
+  description = "EKS cluster security group."
+  vpc_id      = module.vpc.vpc_id
+  tags = merge(var.tags, {
+    "Name"                                                            = "${local.name_suffix}-eks-cluster-sg"
+    "kubernetes.io/cluster/${local.name_suffix}-${local.environment}" = "owned"
+  })
+  depends_on = [
+    module.vpc,
+    module.vpc.aws_subnets
+  ]
+}
+
+resource "aws_security_group_rule" "cluster_egress_internet" {
+  description       = "Allow cluster egress access to the Internet."
+  protocol          = "-1"
+  security_group_id = aws_security_group.cluster.id
+  cidr_blocks       = var.cluster_egress_cidrs
+  from_port         = 0
+  to_port           = 0
+  type              = "egress"
+}
+
+resource "aws_security_group_rule" "cluster_https_worker_ingress" {
+  description       = "Allow workstation to communicate with the EKS cluster API."
+  protocol          = "tcp"
+  security_group_id = aws_security_group.cluster.id
+  cidr_blocks       = var.cluster_endpoint_public_access_cidrs
+  from_port         = 443
+  to_port           = 443
+  type              = "ingress"
+}
+
+
 # Data
+# Retrieve public subnet
+data "aws_subnets" "subnet-public" {
+  filter {
+    name   = "tag:${local.name_suffix}-${local.environment}-public"
+    values = ["shared"]
+  }
+  depends_on = [
+    module.vpc
+  ]
+}
+
+# Retrieve private subnet
+data "aws_subnets" "subnet-private" {
+  filter {
+    name   = "tag:${local.name_suffix}-${local.environment}-private"
+    values = ["shared"]
+  }
+  depends_on = [
+    module.vpc
+  ]
+}
+
 # Retrieve avaibility zones
 data "aws_availability_zones" "available" {}
 
@@ -48,4 +106,3 @@ output "vpc_id" {
   value       = module.vpc.vpc_id
   description = "VPC ID"
 }
-
