@@ -31,47 +31,6 @@ resource "aws_autoscaling_schedule" "sunrise" {
   ]
 }
 
-# Set up the CloudWatch agent to collect cluster metrics
-resource "null_resource" "apply-cloudwatch-agent" {
-  for_each = toset(local.manifests_urls)
-
-  provisioner "local-exec" {
-    command = format("kubectl apply --kubeconfig %s -f %s",
-      data.local_file.kubeconfig.filename,
-      each.value
-    )
-  }
-
-  depends_on = [
-    aws_eks_node_group.workers
-  ]
-}
-
-resource "null_resource" "apply-cloudwatch-agent-config" {
-  provisioner "local-exec" {
-    command = format("kubectl apply --kubeconfig %s -f - <<EOF\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: cwagentconfig\n  namespace: amazon-cloudwatch\ndata:\n  cwagentconfig.json: |\n    %s\nEOF",
-      data.local_file.kubeconfig.filename,
-      jsonencode({
-        "logs" : {
-          "metrics_collected" : {
-            "kubernetes" : {
-              "cluster_name" : aws_eks_cluster.this.name,
-              "metrics_collection_interval" : 60
-            }
-          },
-          "force_flush_interval" : 5
-        }
-      })
-    )
-  }
-
-  depends_on = [
-    null_resource.apply-cloudwatch-agent,
-    aws_eks_node_group.workers
-  ]
-}
-
-
 # CPU Autoscale
 resource "aws_autoscaling_policy" "cpu_scale_up_policy" {
   for_each               = var.node_groups

@@ -48,9 +48,11 @@ resource "aws_security_group" "cluster" {
     "Name"                                                            = "${local.name_suffix}-eks-cluster-sg"
     "kubernetes.io/cluster/${local.name_suffix}-${local.environment}" = "owned"
   })
+
   depends_on = [
     module.vpc,
-    module.vpc.aws_subnets
+    module.vpc.private_subnets,
+    module.vpc.public_subnets,
   ]
 }
 

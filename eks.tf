@@ -96,7 +96,22 @@ resource "aws_eks_node_group" "workers" {
   ]
 }
 
+# Create Kubeconfig
+resource "local_file" "kubeconfig" {
+  content = templatefile("kubeconfig.tpl", {
+    endpoint                   = aws_eks_cluster.this.endpoint
+    certificate_authority_data = aws_eks_cluster.this.certificate_authority.0.data
+    cluster_name               = aws_eks_cluster.this.name
+  })
+  filename = "${path.module}/kubeconfig.yaml"
+}
+
 # Outputs 
+output "cluster_name" {
+  description = "Nome do cluster Kubernetes."
+  value       = aws_eks_cluster.this.name
+}
+
 output "cluster_endpoint" {
   description = "Endpoint da API do cluster Kubernetes."
   value       = aws_eks_cluster.this.endpoint

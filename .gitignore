@@ -38,3 +38,5 @@ override.tf.json
 .terraform.lock.hcl
 .infracost
 *kube*
+
+!kubernetes

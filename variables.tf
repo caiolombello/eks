@@ -10,7 +10,6 @@ variable "resource_tags" {
     Environment = "dev",
     Terraform   = "true"
     Name        = "eks-vertigo-devops"
-
   }
 }
 
@@ -98,7 +97,7 @@ variable "node_groups" {
   description = "Map de maps para criação dos node groups. Exemplo: `node_groups = { example = { ... } }`."
   type        = any
   default = {
-    Vertigo = {
+    Engie = {
       desired_capacity = 4
       max_capacity     = 6
       min_capacity     = 4

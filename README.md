@@ -1,12 +1,21 @@
 # Managed Kubernetes on AWS
 
-- [x] Autoscaling por Memória dos Nodes
-- [x] Autoscaling por CPU dos Nodes
-- [x] Criação de usuário para acesso ao Cluster através da AWS
+- [x]  Deploy CloudWatch Agent for Node Memory Autoscaling
+- [x] Autoscaling Nodes by CPU
+- [x] Create user for AWS cluster access
 
-## Access Cluster
+## Kubernetes Configuration
 
-Retrieve generated IAM data:
+To apply the IAM user for Kubernetes authentication and CloudWatch Agent:
+```bash
+terraform -chdir=kubernetes init
+terraform -chdir=kubernetes plan
+terraform -chdir=kubernetes apply
+```
+
+## Access to Cluster
+
+Retrieve IAM data:
 ```bash
 export aws_access_key_id=$(terraform output root_user_access_key_id)
 export aws_secret_access_key=$(terraform output root_user_secret_access_key)

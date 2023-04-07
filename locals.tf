@@ -20,12 +20,4 @@ locals {
   # Schedule
   today_date    = formatdate("YYYY-MM-DD", timestamp())                 # Data atual
   tomorrow_date = formatdate("YYYY-MM-DD", timeadd(timestamp(), "24h")) # Data de amanhã
-
-  # Autoscaling
-  # CloudWatch Agent
-  manifests_urls = [
-    "https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/cloudwatch-namespace.yaml",
-    "https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/cwagent/cwagent-serviceaccount.yaml",
-    "https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/cwagent/cwagent-daemonset.yaml"
-  ]
 }
