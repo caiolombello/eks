@@ -15,7 +15,7 @@ resource "kubernetes_service_account" "cloudwatch_agent" {
   }
 
   depends_on = [
-    kubernetes_namespace.amazon_cloudwatch,
+    kubernetes_namespace.amazon_cloudwatch
   ]
 }
 
@@ -62,7 +62,7 @@ resource "kubernetes_cluster_role" "cloudwatch_agent_role" {
   }
 
   depends_on = [
-    kubernetes_namespace.amazon_cloudwatch,
+    kubernetes_namespace.amazon_cloudwatch
   ]
 }
 
@@ -86,7 +86,7 @@ resource "kubernetes_cluster_role_binding" "cloudwatch_agent_role_binding" {
   depends_on = [
     kubernetes_service_account.cloudwatch_agent,
     kubernetes_cluster_role.cloudwatch_agent_role,
-    kubernetes_namespace.amazon_cloudwatch,
+    kubernetes_namespace.amazon_cloudwatch
   ]
 }
 

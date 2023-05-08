@@ -54,7 +54,17 @@ resource "helm_release" "cilium" {
   }
 
   set {
+    name = "prometheus.serviceMonitor.enabled"
+    value = "true"
+  }
+
+  set {
     name  = "operator.prometheus.enabled"
+    value = "true"
+  }
+
+  set {
+    name = "operator.prometheus.serviceMonitor.enabled"
     value = "true"
   }
 
@@ -66,7 +76,22 @@ resource "helm_release" "cilium" {
   }
 
   set {
+    name = "hubble.metrics.serviceMonitor.enabled"
+    value = "true"
+  }
+
+  set {
     name  = "hubble.metrics.enabled"
     value = "{dns,drop,tcp,flow,port-distribution,icmp,httpV2:exemplars=true;labelsContext=source_ip\\,source_namespace\\,source_workload\\,destination_ip\\,destination_namespace\\,destination_workload\\,traffic_direction}"
+  }
+
+  set {
+    name = "hubble.metrics.dashboards.enabled"
+    value = "true"
+  }
+
+  set {
+    name = "hubble.metrics.dashboards.namespace"
+    value = "monitoring"
   }
 }
