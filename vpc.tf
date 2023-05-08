@@ -4,7 +4,7 @@ module "vpc" {
   version              = ">= 3.16.0" # Last version on 07/10/2022
   name                 = "${local.name_suffix}-${local.environment}"
   cidr                 = var.cidr_block
-  azs                  = data.aws_availability_zones.available.names
+  azs                  = ["us-east-1a", "us-east-1b"]
   public_subnets       = var.public_subnets
   private_subnets      = var.private_subnets
   enable_nat_gateway   = true
@@ -95,10 +95,17 @@ data "aws_subnets" "subnet-private" {
     name   = "tag:${local.name_suffix}-${local.environment}-private"
     values = ["shared"]
   }
+
+  filter {
+    name   = "availability-zone"
+    values = ["us-east-1a", "us-east-1b"]
+  }
+
   depends_on = [
     module.vpc
   ]
 }
+
 
 # Retrieve avaibility zones
 data "aws_availability_zones" "available" {}
@@ -107,4 +114,8 @@ data "aws_availability_zones" "available" {}
 output "vpc_id" {
   value       = module.vpc.vpc_id
   description = "VPC ID"
+}
+
+output "private_subnets_ids" {
+  value = module.vpc.private_subnets
 }

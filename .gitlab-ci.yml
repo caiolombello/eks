@@ -5,7 +5,7 @@ stages:
 
 .terraform:
   image: 
-    name: hashicorp/terraform:latest
+    name: hashicorp/terraform-k8s:latest
     entrypoint:
       - '/bin/sh'
       - '-c'

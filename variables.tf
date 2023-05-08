@@ -34,7 +34,7 @@ variable "public_subnets" {
 variable "private_subnets" {
   description = "Private subnets list created on VPC."
   type        = list(string)
-  default     = ["10.50.3.0/24", "10.50.4.0/24"]
+  default     = ["10.50.5.0/24", "10.50.6.0/24"]
 }
 
 # Cluster
@@ -98,9 +98,9 @@ variable "node_groups" {
   type        = any
   default = {
     Engie = {
-      desired_capacity = 4
-      max_capacity     = 6
-      min_capacity     = 4
+      desired_capacity = 1
+      max_capacity     = 2
+      min_capacity     = 1
       instance_types   = ["t3a.medium"]
       capacity_type    = "ON_DEMAND"
       disk_size        = 10

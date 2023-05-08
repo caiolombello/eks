@@ -1,35 +1,35 @@
 # Schedule
-resource "aws_autoscaling_schedule" "monrise" {
-  for_each               = var.node_groups
-  scheduled_action_name  = "monrise"
-  min_size               = 0
-  max_size               = 0
-  desired_capacity       = 0
-  recurrence             = "0 19 * * MON-FRI"
-  start_time             = "${local.today_date}T21:00:00Z" #UTC time
-  time_zone              = "America/Sao_Paulo"
-  autoscaling_group_name = aws_eks_node_group.workers[each.key].resources[0].autoscaling_groups[0].name
+# resource "aws_autoscaling_schedule" "monrise" {
+#   for_each               = var.node_groups
+#   scheduled_action_name  = "monrise"
+#   min_size               = 0
+#   max_size               = 0
+#   desired_capacity       = 0
+#   recurrence             = "0 19 * * MON-FRI"
+#   start_time             = "${local.today_date}T21:00:00Z" #UTC time
+#   time_zone              = "America/Sao_Paulo"
+#   autoscaling_group_name = aws_eks_node_group.workers[each.key].resources[0].autoscaling_groups[0].name
 
-  depends_on = [
-    aws_eks_node_group.workers
-  ]
-}
+#   depends_on = [
+#     aws_eks_node_group.workers
+#   ]
+# }
 
-resource "aws_autoscaling_schedule" "sunrise" {
-  for_each               = var.node_groups
-  scheduled_action_name  = "sunrise"
-  min_size               = aws_eks_node_group.workers[each.key].scaling_config[0].min_size
-  max_size               = aws_eks_node_group.workers[each.key].scaling_config[0].max_size
-  desired_capacity       = aws_eks_node_group.workers[each.key].scaling_config[0].desired_size
-  recurrence             = "0 7 * * MON-FRI"
-  start_time             = "${local.tomorrow_date}T12:00:00Z" #UTC time
-  time_zone              = "America/Sao_Paulo"
-  autoscaling_group_name = aws_eks_node_group.workers[each.key].resources[0].autoscaling_groups[0].name
+# resource "aws_autoscaling_schedule" "sunrise" {
+#   for_each               = var.node_groups
+#   scheduled_action_name  = "sunrise"
+#   min_size               = aws_eks_node_group.workers[each.key].scaling_config[0].min_size
+#   max_size               = aws_eks_node_group.workers[each.key].scaling_config[0].max_size
+#   desired_capacity       = aws_eks_node_group.workers[each.key].scaling_config[0].desired_size
+#   recurrence             = "0 7 * * MON-FRI"
+#   start_time             = "${local.tomorrow_date}T12:00:00Z" #UTC time
+#   time_zone              = "America/Sao_Paulo"
+#   autoscaling_group_name = aws_eks_node_group.workers[each.key].resources[0].autoscaling_groups[0].name
 
-  depends_on = [
-    aws_eks_node_group.workers
-  ]
-}
+#   depends_on = [
+#     aws_eks_node_group.workers
+#   ]
+# }
 
 # CPU Autoscale
 resource "aws_autoscaling_policy" "cpu_scale_up_policy" {

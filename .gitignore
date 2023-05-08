@@ -40,3 +40,4 @@ override.tf.json
 *kube*
 
 !kubernetes
+!kubeconfig.tpl

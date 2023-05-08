@@ -81,10 +81,10 @@ resource "aws_eks_node_group" "workers" {
     }
   }
 
-  #lifecycle { #Optional: Allow external changes without Terraform plan difference
-  #  create_before_destroy = true
-  #  ignore_changes        = [scaling_config[0].desired_size]
-  #}
+  # lifecycle { # Optional: Allow external changes without Terraform plan difference
+  #   create_before_destroy = true
+  #   ignore_changes        = [scaling_config[0].desired_size]
+  # }
 
   depends_on = [
     module.vpc,
