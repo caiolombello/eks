@@ -3,6 +3,6 @@ resource "null_resource" "remove_aws_node_daemonset" {
     command = "${path.module}/remove_aws_node_daemonset.sh"
   }
   triggers = {
-    timestamp = timestamp()
+    kube_prometheus_stack_id = helm_release.kube_prometheus_stack.id
   }
 }

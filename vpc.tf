@@ -24,19 +24,19 @@ module "vpc" {
 
 # Logs
 # Create bucket for storage the vpc logs
-resource "aws_s3_bucket" "vpc" {
-  bucket        = "logs-vpc-${local.name_suffix}-${local.environment}"
-  force_destroy = true
-  tags          = var.resource_tags
-}
+# resource "aws_s3_bucket" "vpc" {
+#   bucket        = "logs-vpc-${local.name_suffix}-${local.environment}"
+#   force_destroy = true
+#   tags          = var.resource_tags
+# }
 
 # Active de logs on VPC
-resource "aws_flow_log" "liferay" {
-  log_destination      = aws_s3_bucket.vpc.arn
-  log_destination_type = "s3"
-  traffic_type         = "ALL"
-  vpc_id               = module.vpc.vpc_id
-}
+# resource "aws_flow_log" "liferay" {
+#   log_destination      = aws_s3_bucket.vpc.arn
+#   log_destination_type = "s3"
+#   traffic_type         = "ALL"
+#   vpc_id               = module.vpc.vpc_id
+# }
 
 
 # Cluster Security Group

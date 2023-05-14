@@ -1,0 +1,523 @@
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - grafana-cert
+  tls:
+   - secretName: grafana.dev.engie.internal
+     hosts:
+       - grafana.dev.engie.internal
+
+env:
+  AWS_ACCESS_KEY: x
+  AWS_SECRET_KEY: x
+  GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/homepage/homepage.json
+  TZ: America/Sao_Paulo
+
+grafana.ini:
+  auth.okta:
+    enabled: true
+    name: Okta
+    icon: okta
+    allow_sign_up: false
+    client_id: x
+    client_secret: x
+    auth_url: x
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: prometheus
+      uid: prometheus
+      type: prometheus
+      url: http://prometheus-prometheus.monitoring.svc.cluster.local:9090
+      jsonData:
+        manageAlerts: true
+        alertmanagerUid: alertmanager
+        prometheusType: Prometheus
+        isDefault: true
+    - name: alertmanager
+      uid: alertmanager
+      type: alertmanager
+      url: http://prometheus-alertmanager.monitoring.svc.cluster.local:9093
+      jsonData:
+        implementation: prometheus
+    - name: cloudwatch
+      uid: cloudwatch
+      type: cloudwatch
+      access: proxy
+      url: https://us-east-1.console.aws.amazon.com
+      jsonData:
+        authType: "keys"
+        region: "us-east-1"
+      secureJsonData:
+        accessKey: "${AWS_ACCESS_KEY}"
+        secretKey: "${AWS_SECRET_KEY}"
+    - name: loki
+      type: loki
+      uid: loki
+      url: http://loki.monitoring.svc.cluster.local:3100
+      jsonData:
+        derivedFields:
+          - datasourceUid: tempo
+            matcherRegex: "traceID=(\\w+)"
+            name: traceID
+            url: '$${__value.raw}'
+    - name: tempo
+      uid: tempo
+      type: tempo
+      url: http://tempo.monitoring.svc.cluster.local:3100
+      access: proxy
+      jsonData:
+        httpMethod: GET
+        tracesToLogs:
+          datasourceUid: 'loki'
+          tags: ['job', 'instance', 'pod', 'namespace']
+          mappedTags: [{ key: 'service.name', value: 'service' }]
+          mapTagNamesEnabled: false
+          spanStartTimeShift: '1h'
+          spanEndTimeShift: '1h'
+          filterByTraceID: false
+          filterBySpanID: false
+        tracesToMetrics:
+          datasourceUid: 'prom'
+          tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
+          queries:
+            - name: 'Sample query'
+              query: 'sum(rate(traces_spanmetrics_latency_bucket{$__tags}[5m]))'
+        serviceMap:
+          datasourceUid: 'prometheus'
+        search:
+          hide: false
+        nodeGraph:
+          enabled: true
+        lokiSearch:
+          datasourceUid: 'loki'
+    - name: Hubble
+      uid: hubble
+      type: isovalent-hubble-datasource
+      url: http://hubble-relay.kube-system.svc.cluster.local
+      access: proxy
+      isDefault: false
+      jsonData:
+        timeInterval: "5s"
+        prometheusDatasourceUid: "prometheus"
+        tempoDatasourceUid: "tempo"
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+
+    # General
+    - name: homepage
+      orgId: 1
+      folder: ''
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/homepage
+
+    # Cluster
+    - name: workload-total
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/workload-total
+    - name: persistentvolumeusage
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/persistentvolumeusage
+    - name: apiserver
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/apiserver
+    - name: pod-total
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/pod-total
+    - name: proxy
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/proxy
+    - name: cluster-total
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/cluster-total
+    - name: node-rsrc-use
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/node-rsrc-use
+    - name: k8s-resources-cluster
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/k8s-resources-cluster
+    - name: node-cluster-rsrc-use
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/node-cluster-rsrc-use
+    - name: k8s-resources-node
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/k8s-resources-node
+    - name: k8s-resources-workload
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/k8s-resources-workload
+    - name: kubelet
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/kubelet
+    - name: namespace-by-pod
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/namespace-by-pod
+    - name: k8s-resources-namespace
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/k8s-resources-namespace
+    - name: namespace-by-workload
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/namespace-by-workload
+    - name: k8s-resources-pod
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/k8s-resources-pod
+    - name: k8s-resources-workloads-namespace
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/k8s-resources-workloads-namespace
+    - name: nodes
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/nodes  
+    - name: node-exporter-full
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/node-exporter-full
+    - name: kubernetes-overview
+      orgId: 1
+      folder: 'Cluster'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/kubernetes-overview
+
+    # App
+    - name: 'loki-logs'
+      orgId: 1
+      folder: 'App'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/loki-logs
+    
+    - name: 'app-overview'
+      orgId: 1
+      folder: 'App'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/app-overview
+
+    # AWS
+    - name: api-gateway
+      orgId: 1
+      folder: 'AWS'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/api-gateway
+    - name: rds
+      orgId: 1
+      folder: 'AWS'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/rds
+    - name: load-balancer
+      orgId: 1
+      folder: 'AWS'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/load-balancer
+    - name: cloudwatch-logs
+      orgId: 1
+      folder: 'AWS'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/cloudwatch-logs
+
+    # Services
+    - name: prometheus
+      orgId: 1
+      folder: 'Services'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/prometheus
+
+    - name: ingress-nginx
+      orgId: 1
+      folder: 'Services'
+      type: file
+      options:
+        path: /var/lib/grafana/dashboards/ingress-nginx
+
+    # # Cilium
+    # - name: cilium-dashboard
+    #   orgId: 1
+    #   folder: 'Cilium'
+    #   type: file
+    #   options:
+    #     path: /var/lib/grafana/dashboards/cilium-dashboard 
+
+    # # Hubble
+    # - name: hubble-dashboard
+    #   orgId: 1
+    #   folder: 'Cilium'
+    #   type: file
+    #   options:
+    #     path: /var/lib/grafana/dashboards/hubble-dashboard 
+    
+    # - name: http-connectivity
+    #   orgId: 1
+    #   folder: 'Cilium'
+    #   type: file
+    #   options:
+    #     path: /var/lib/grafana/dashboards/http-connectivity
+    
+    # - name: flows-by-protocol
+    #   orgId: 1
+    #   folder: 'Cilium'
+    #   type: file
+    #   options:
+    #     path: /var/lib/grafana/dashboards/flows-by-protocol
+
+    # - name: grafana-hubble-l7-http-metrics-by-workload
+    #   orgId: 1
+    #   folder: 'Cilium'
+    #   type: file
+    #   options:
+    #     path: /var/lib/grafana/dashboards/grafana-hubble-l7-http-metrics-by-workload
+
+dashboards:
+
+  # Loki
+  loki-logs:
+    loki-dashboard:
+      gnetId: 13639
+      revision: 2
+      datasource: loki
+
+  # Cluster
+  node-exporter-full:
+    node-exporter-dashboard:
+      gnetId: 12904
+      revision: 29
+      datasource: prometheus
+  kubernetes-overview:
+    kubernetes-overview-dashboard:
+      gnetId: 13838
+      revision: 2
+      datasource: prometheus
+
+  # AWS
+  api-gateway:
+    api-gateway:
+      gnetId: 1516
+      revision: 11
+      datasource: cloudwatch
+  rds:
+    rds:
+      gnetId: 707
+      revision: 5
+      datasource: cloudwatch
+  load-balancer:
+    load-balancer:
+      gnetId: 12111
+      revision: 2
+      datasource: cloudwatch
+  cloudwatch-logs:
+    cloudwatch-logs:
+      gnetId: 11266
+      revision: 1
+      datasource: cloudwatch
+
+  # Ingress-NGINX
+  ingress-nginx:
+    ingress-nginx:
+      gnetId: 9614
+      revision: 1
+      datasource: prometheus
+
+dashboardsConfigMaps:
+
+  # General
+  homepage: homepage
+
+  # Cluster
+  workload-total: prometheus-workload-total
+  namespace-by-workload: prometheus-namespace-by-workload
+  persistentvolumeusage: prometheus-persistentvolumesusage
+  apiserver: prometheus-apiserver
+  k8s-resources-workload: prometheus-k8s-resources-workload
+  k8s-resources-workloads-namespace: prometheus-k8s-resources-workloads-namespace
+  kubelet: prometheus-kubelet
+  k8s-resources-pod: prometheus-k8s-resources-pod
+  namespace-by-pod: prometheus-namespace-by-pod
+  pod-total: prometheus-pod-total
+  nodes: prometheus-nodes
+  k8s-resources-namespace: prometheus-k8s-resources-namespace
+  cluster-total: prometheus-cluster-total
+  k8s-resources-node: prometheus-k8s-resources-node
+  node-rsrc-use: prometheus-node-rsrc-use
+  node-cluster-rsrc-use: prometheus-node-cluster-rsrc-use
+  k8s-resources-cluster: prometheus-k8s-resources-cluster
+  proxy: prometheus-proxy
+
+  # App
+  app-overview: app-overview
+
+  # Prometheus
+  alertmanager-overview: prometheus-alertmanager-overview
+  prometheus: prometheus-prometheus
+
+  # # Cilium
+  # cilium-dashboard: cilium-dashboard
+
+  # # Hubble
+  # hubble-dashboard: hubble-dashboard
+  # grafana-hubble-l7-http-metrics-by-workload: grafana-hubble-l7-http-metrics-by-workload
+  # http-connectivity: http-connectivity
+  # flows-by-protocol: flows-by-protocol
+
+plugins:
+  - isovalent-hubble-datasource
+  - grafana-piechart-panel
+
+alerting: 
+  rules.yaml:
+    apiVersion: 1
+    groups: 
+      - orgId: 1
+        name: loki
+        folder: Services
+        interval: 1m
+        rules:
+          - uid: DEV_GestorRequestEstoque
+            title: DEV_GestorRequestEstoque
+            condition: C
+            data:
+              - refId: A
+                queryType: range
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: loki
+                model:
+                  datasource:
+                      type: loki
+                      uid: loki
+                  editorMode: code
+                  expr: sum(rate({app="gce-adequacao-gestor", namespace="app-aao-dev"} |= `erro na requisição estoque` [1m]))
+                  hide: false
+                  intervalMs: 1000
+                  maxDataPoints: 43200
+                  queryType: range
+                  refId: A
+              - refId: C
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  conditions:
+                      - evaluator:
+                          params:
+                              - 0.5
+                          type: gt
+                        operator:
+                          type: and
+                        query:
+                          params:
+                              - C
+                        reducer:
+                          params: []
+                          type: last
+                        type: query
+                  datasource:
+                      type: __expr__
+                      uid: __expr__
+                  expression: A
+                  hide: false
+                  intervalMs: 1000
+                  maxDataPoints: 43200
+                  refId: C
+                  type: threshold
+            noDataState: NoData
+            execErrState: Error
+            for: 1m
+            annotations:
+              description: 'Gestor está falhando em realizar requisições para o Estoque.'
+              summary: '[DEV] Gestor com múltiplos erros na requisição Estoque'
+            labels:
+              alert: "true"
+              severity: warning
+              namespace: app-aao-dev
+            isPaused: false
+
+  contactpoints.yaml:
+    apiVersion: 1
+    contactPoints:
+      - orgId: 1
+        name: notify
+        receivers:
+          - uid: alertmanager
+            type: prometheus-alertmanager
+            is_default: true
+            settings:
+              url: http://prometheus-alertmanager.monitoring.svc.cluster.local:9093
+
+notifiers:
+ notifiers.yaml:
+   notifiers:
+   - name: notify
+     type: prometheus-alertmanager
+     uid: alertmanager
+     org_id: 1
+     is_default: true
+     settings:
+       url: http://prometheus-alertmanager.monitoring.svc.cluster.local:9093

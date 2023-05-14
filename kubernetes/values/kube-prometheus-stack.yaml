@@ -1,0 +1,247 @@
+fullnameOverride: prometheus
+
+alertmanager:
+  enabled: true
+  config:
+    global:
+      resolve_timeout: 5m
+    inhibit_rules:
+      - source_matchers:
+          - 'severity = critical'
+        target_matchers:
+          - 'severity =~ warning|info'
+        equal:
+          - 'namespace'
+          - 'alertname'
+      - source_matchers:
+          - 'severity = warning'
+        target_matchers:
+          - 'severity = info'
+        equal:
+          - 'namespace'
+          - 'alertname'
+      - source_matchers:
+          - 'alertname = InfoInhibitor'
+        target_matchers:
+          - 'severity = info'
+        equal:
+          - 'namespace'
+    receivers:
+    - name: devnull
+    - name: prometheus-msteams-MSTEAMS-CHANNEL
+      webhook_configs:
+      - url: http://prometheus-msteams:2000/MSTEAMS-CHANNEL
+        send_resolved: true
+    route:
+      group_by: ['...']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 5m
+      receiver: devnull
+      routes:
+      - receiver: prometheus-msteams-MSTEAMS-CHANNEL
+        match:
+          alert: 'true'
+
+additionalPrometheusRulesMap:
+  kube.alerts:
+    groups:
+    - name: kube.alerts
+      rules:
+      - alert: NodePodCrashLooping
+        expr: increase(kube_pod_container_status_restarts_total[1m]) > 3
+        for: 2m
+        labels:
+          severity: warning
+          alert: 'true'
+        annotations:
+          summary: Looping de falha do pod do nó (instance {{ $labels.instance }})
+          description: "Pod {{ $labels.pod }} está em looping de falha"
+
+      - alert: NodeMemoryPressure
+        expr: kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
+        for: 2m
+        labels:
+          severity: critical
+          alert: 'true'
+        annotations:
+          summary: Node (instance {{ $labels.instance }}) com pressão de memória
+          description: "{{ $labels.node }} está em condição de pressão de memória"
+
+      - alert: NodeHighCPU
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          alert: 'true'
+        annotations:
+          description: 'Node {{ $labels.instance }} está usando mais de 80% de seu limite de CPU'
+          summary: "Alta utilização da CPU na instância {{ $labels.instance }}"
+
+      - alert: KubernetesNetworkUnavailable
+        expr: kube_node_status_condition{condition="NetworkUnavailable",status="true"} == 1
+        for: 2m
+        labels:
+          severity: critical
+          alert: 'true'
+        annotations:
+          summary: Rede indisponível no Node (instance {{ $labels.instance }})
+          description: "{{ $labels.node }} tem condição de rede indisponível"
+
+      - alert: KubernetesOutOfCapacity
+        expr: sum by (node) ((kube_pod_status_phase{phase="Running"} == 1) + on(uid) group_left(node) (0 * kube_pod_info{pod_template_hash=""})) / sum by (node) (kube_node_status_allocatable{resource="pods"}) * 100 > 90
+        for: 2m
+        labels:
+          severity: warning
+          alert: 'true'
+        annotations:
+          summary: Node fora de capacidade (instance {{ $labels.instance }})
+          description: "{{ $labels.node }} está fora de capacidade"
+
+      - alert: KubernetesVolumeOutOfDiskSpace
+        expr: kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes * 100 < 10
+        for: 2m
+        labels:
+          severity: warning
+          alert: 'true'
+        annotations:
+          summary: Volume sem espaço em disco no Node (instance {{ $labels.instance }})
+          description: "O volume está quase cheio (< 10% left)"
+
+      - alert: KubernetesPersistentvolumeError
+        expr: kube_persistentvolume_status_phase{phase=~"Failed|Pending", job="kube-state-metrics"} > 0
+        for: 0m
+        labels:
+          severity: critical
+          alert: 'true'
+        annotations:
+          summary: Erro de volume persistente no Node (instance {{ $labels.instance }})
+          description: "O volume persistente está em mau estado"
+
+      - alert: KubernetesDiskPressure
+        expr: kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+        for: 2m
+        labels:
+          severity: critical
+          alert: 'true'
+        annotations:
+          summary: Pressão de disco no Node (instance {{ $labels.instance }})
+          description: "{{ $labels.node }} está em condição de pressão de disco"
+      
+      - alert: KubernetesPodNotHealthy
+        expr: sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0
+        for: 1m
+        labels:
+          severity: critical
+          alert: 'true'
+        annotations:
+          summary: Pod não saudável no Node (instance {{ $labels.instance }})
+          description: "O pod {{ $labels.pod }} no namespace {{ $labels.namespace }} está em um estado não pronto há mais de 1 minuto."
+
+      - alert: ContainerKilled
+        expr: time() - container_last_seen > 60
+        for: 0m
+        labels:
+          severity: warning
+          alert: 'true'
+        annotations:
+          summary: Container morto no Node (instance {{ $labels.instance }})
+          description: "O Container {{ $labels.container }} desapareceu na {{ $labels.namespace }}"    
+
+      - alert: PodHighCPU
+        expr: sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace!="", pod!="", cluster=""}) by (pod) / sum(kube_pod_container_resource_limits{job="kube-state-metrics", cluster="", namespace!="", pod!="", resource="cpu"}) by (pod) >= 0.8
+        for: 5m
+        labels:
+          severity: warning
+          alert: 'true'
+        annotations:
+          description: "Pod {{ $labels.pod }} está usando mais de 80% de CPU perto do limite"
+          summary: 'Alto uso de CPU no pod {{ $labels.pod }} na namespace {{ $labels.namespace }}'
+
+      - alert: PodHighMemory
+        expr: sum(container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", cluster="", namespace!="", pod!="prometheus-prometheus-prometheus-0", container!="", image!=""}) by(pod) / sum(kube_pod_container_resource_limits{job="kube-state-metrics", cluster="", namespace!="", pod!="", resource="memory"}) by(pod) >= 0.8
+        for: 5m
+        labels:
+          severity: warning
+          alert: 'true'
+        annotations:
+          description: "Pod {{ $labels.pod }} está usando mais de 80% de memória perto do limite"
+          summary: 'Alto uso de Memória no pod {{ $labels.pod }} na namespace {{ $labels.namespace }}'
+
+      - alert: HighPVC
+        expr: ((kubelet_volume_stats_capacity_bytes) - kubelet_volume_stats_available_bytes) / (kubelet_volume_stats_capacity_bytes * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          alert: 'true'
+        annotations:
+          description: "{{ $labels.persistentvolumeclaim }} na namespace {{ $labels.namespace }} está em 80% de sua capacidade"
+          summary: 'Alto uso do PV: {{ $labels.persistentvolumeclaim }} na namespace {{ $labels.namespace }}'
+  
+  # Custom metrics to Prometheus Adapter (Metrics-Server)
+  resource.rules:
+    groups:
+    - name: resource.rules
+      rules:
+        - record: pod:memory_usage_percentage:ratio
+          expr: |
+            sum by (pod, namespace) (
+              container_memory_working_set_bytes{cluster="",container!="",image!="",job="kubelet",metrics_path="/metrics/cadvisor",namespace!="",pod!=""}
+            )
+            /
+            sum by (pod, namespace) (
+              kube_pod_container_resource_limits{cluster="",job="kube-state-metrics",namespace!="",pod!="",resource="memory"}
+            ) * 100
+
+        - record: pod:cpu_usage_percentage:ratio
+          expr: |
+            sum by (pod, namespace) (
+              node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{cluster="",namespace!="",pod!=""}
+            )
+            /
+            sum by (pod, namespace) (
+              kube_pod_container_resource_limits{cluster="",job="kube-state-metrics",namespace!="",pod!="",resource="cpu"}
+            ) * 100
+
+grafana:
+  enabled: false
+  forceDeployDashboards: true
+
+prometheusOperator:
+  enabled: true
+
+prometheus:
+  enabled: true
+  ingress:
+    enabled: true
+    hosts:
+      - produtosverdes-prometheus.dev.engie.internal
+    ingressClassName: nginx
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    tls:
+      - hosts:
+          - produtosverdes-prometheus.dev.engie.internal
+        secretName: prometheus-cert
+
+  prometheusSpec:
+    retention: 15d
+
+    enableRemoteWriteReceiver: true
+    
+    # storageSpec:
+    #   volumeClaimTemplate:
+    #     metadata:
+    #       name: db
+    #     spec:
+    #       storageClassName: gp2
+    #       accessModes: ["ReadWriteOnce"]
+    #       resources:
+    #         requests:
+    #           storage: 10Gi
+    #       selector:
+    #         matchLabels:
+    #           app.kubernetes.io/name: prometheus
+
+# coreDns:
+#   enabled: false

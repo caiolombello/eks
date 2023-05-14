@@ -1,6 +1,6 @@
 resource "helm_release" "cilium" {
   name       = "cilium"
-  namespace  = "kube-system"
+  namespace  = "monitoring"
   repository = "https://helm.cilium.io/"
   chart      = "cilium"
   version    = "1.13.2"
@@ -58,6 +58,11 @@ resource "helm_release" "cilium" {
     value = "true"
   }
 
+  # set {
+  #   name = "prometheus.serviceMonitor.labels"
+  #   value = jsonencode({ release: "prometheus" })
+  # }
+
   set {
     name  = "operator.prometheus.enabled"
     value = "true"
@@ -67,6 +72,11 @@ resource "helm_release" "cilium" {
     name = "operator.prometheus.serviceMonitor.enabled"
     value = "true"
   }
+
+  # set {
+  #   name  = "operator.prometheus.serviceMonitor.labels"
+  #   value = jsonencode({ release: "prometheus" })
+  # }
 
   # Hubble Metrics Enabled
 
@@ -80,9 +90,14 @@ resource "helm_release" "cilium" {
     value = "true"
   }
 
+  # set {
+  #   name = "hubble.metrics.serviceMonitor.labels"
+  #   value = jsonencode({ release: "prometheus" })
+  # }
+
   set {
     name  = "hubble.metrics.enabled"
-    value = "{dns,drop,tcp,flow,port-distribution,icmp,httpV2:exemplars=true;labelsContext=source_ip\\,source_namespace\\,source_workload\\,destination_ip\\,destination_namespace\\,destination_workload\\,traffic_direction}"
+    value = "{dns,drop,tcp,flow,port-distribution,icmp,httpV2:exemplars=true;labelsContext=source_ip\\,source_namespace\\,source_workload\\,destination_ip\\,destination_namespace\\,destination_workload\\,traffic_direction;sourceContext=workload-name|pod-name|reserved-identity;destinationContext=workload-name|pod-name|reserved-identity}"
   }
 
   set {
@@ -94,4 +109,8 @@ resource "helm_release" "cilium" {
     name = "hubble.metrics.dashboards.namespace"
     value = "monitoring"
   }
+
+  depends_on = [ 
+    helm_release.kube_prometheus_stack 
+  ]
 }

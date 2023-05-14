@@ -9,7 +9,7 @@ variable "resource_tags" {
   default = {
     Environment = "dev",
     Terraform   = "true"
-    Name        = "eks-vertigo-devops"
+    Name        = "eks-devops"
   }
 }
 
@@ -41,7 +41,7 @@ variable "private_subnets" {
 variable "cluster_version" {
   description = "Versão do Kubernetes para o cluster EKS."
   type        = string
-  default     = "1.23"
+  default     = "1.26"
 }
 
 variable "cluster_enabled_log_types" {
@@ -97,10 +97,10 @@ variable "node_groups" {
   description = "Map de maps para criação dos node groups. Exemplo: `node_groups = { example = { ... } }`."
   type        = any
   default = {
-    Engie = {
-      desired_capacity = 1
-      max_capacity     = 2
-      min_capacity     = 1
+    DevOps = {
+      desired_capacity = 2
+      max_capacity     = 3
+      min_capacity     = 2
       instance_types   = ["t3a.medium"]
       capacity_type    = "ON_DEMAND"
       disk_size        = 10
