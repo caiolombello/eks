@@ -25,6 +25,7 @@ variable "cidr_block" {
   type        = string
   default     = "10.50.0.0/16"
 }
+
 variable "public_subnets" {
   description = "Public subnets list created on VPC."
   type        = list(string)
@@ -106,6 +107,22 @@ variable "node_groups" {
       disk_size        = 10
     }
   }
+}
+
+variable "taints" {
+  description = "List of taints to apply to the node group"
+  type = list(object({
+    key    = string
+    value  = string
+    effect = string
+  }))
+  default = [
+    {
+      key    = "node.cilium.io/agent-not-ready"
+      value  = "true"
+      effect = "NO_EXECUTE"
+    }
+  ]
 }
 
 variable "aws_launch_configuration" {

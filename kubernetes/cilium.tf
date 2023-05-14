@@ -4,113 +4,35 @@ resource "helm_release" "cilium" {
   repository = "https://helm.cilium.io/"
   chart      = "cilium"
   version    = "1.13.2"
+  values = [file("${path.module}/values/cilium.yaml")]
 
-  set {
-    name  = "eni.enabled"
-    value = "true"
-  }
-
-  set {
-    name  = "ipam.mode"
-    value = "eni"
-  }
-
-  set {
-    name  = "egressMasqueradeInterfaces"
-    value = "eth0"
-  }
-
-  set {
-    name  = "tunnel"
-    value = "disabled"
-  }
-
-  set {
-    name  = "nodeinit.enabled"
-    value = "true"
-  }
-
-  # Hubble enabled
-  set {
-    name  = "hubble.listenAddress"
-    value = ":4244"
-  }
-
-  set {
-    name  = "hubble.relay.enabled"
-    value = "true"
-  }
-
-  set {
-    name  = "hubble.ui.enabled"
-    value = "false"
-  }
-
-  # Cilium Metrics Enabled
-
-  set {
-    name  = "prometheus.enabled"
-    value = "true"
-  }
-
-  set {
-    name = "prometheus.serviceMonitor.enabled"
-    value = "true"
-  }
-
-  # set {
-  #   name = "prometheus.serviceMonitor.labels"
-  #   value = jsonencode({ release: "prometheus" })
-  # }
-
-  set {
-    name  = "operator.prometheus.enabled"
-    value = "true"
-  }
-
-  set {
-    name = "operator.prometheus.serviceMonitor.enabled"
-    value = "true"
-  }
-
-  # set {
-  #   name  = "operator.prometheus.serviceMonitor.labels"
-  #   value = jsonencode({ release: "prometheus" })
-  # }
-
-  # Hubble Metrics Enabled
-
-  set {
-    name  = "hubble.metrics.enableOpenMetrics"
-    value = "true"
-  }
-
-  set {
-    name = "hubble.metrics.serviceMonitor.enabled"
-    value = "true"
-  }
-
-  # set {
-  #   name = "hubble.metrics.serviceMonitor.labels"
-  #   value = jsonencode({ release: "prometheus" })
-  # }
-
-  set {
-    name  = "hubble.metrics.enabled"
-    value = "{dns,drop,tcp,flow,port-distribution,icmp,httpV2:exemplars=true;labelsContext=source_ip\\,source_namespace\\,source_workload\\,destination_ip\\,destination_namespace\\,destination_workload\\,traffic_direction;sourceContext=workload-name|pod-name|reserved-identity;destinationContext=workload-name|pod-name|reserved-identity}"
-  }
-
-  set {
-    name = "hubble.metrics.dashboards.enabled"
-    value = "true"
-  }
-
-  set {
-    name = "hubble.metrics.dashboards.namespace"
-    value = "monitoring"
-  }
-
-  depends_on = [ 
-    helm_release.kube_prometheus_stack 
-  ]
+  # depends_on = [ 
+  #   helm_release.kube_prometheus_stack 
+  # ]
 }
+
+resource "null_resource" "restart_pods" {
+  depends_on = [helm_release.cilium]
+
+  provisioner "local-exec" {
+    command = <<EOF
+      kubectl get pods --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,HOSTNETWORK:.spec.hostNetwork --no-headers=true | grep '<none>' | awk '{print "-n "$1" "$2}' | xargs -L 1 -r kubectl delete pod
+    EOF
+  }
+}
+
+# resource "null_resource" "enable_security_group" {
+#   depends_on = [null_resource.restart_pods]
+
+#   provisioner "local-exec" {
+#     command = <<EOF
+#       export EKS_CLUSTER_NAME=${data.terraform_remote_state.eks.outputs.cluster_name}
+#       export EKS_CLUSTER_ROLE_NAME=$(aws eks describe-cluster \
+#           --name "$${EKS_CLUSTER_NAME}" \
+#           | jq -r '.cluster.roleArn' | awk -F/ '{print $NF}')
+#       aws iam attach-role-policy \
+#           --policy-arn arn:aws:iam::aws:policy/AmazonEKSVPCResourceController \
+#           --role-name "$${EKS_CLUSTER_ROLE_NAME}"
+#     EOF
+#   }
+# }

@@ -1,0 +1,52 @@
+eni:
+  enabled: true
+
+ipam:
+  mode: "eni"
+
+egressMasqueradeInterfaces: "eth0"
+
+tunnel: "disabled"
+
+nodeinit:
+  enabled: true
+
+hubble:
+  listenAddress: ":4244"
+  relay:
+    enabled: true
+    servicePort: 4245
+  ui:
+    enabled: true
+  metrics:
+    enableOpenMetrics: true
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: "prometheus"
+    enabled: 
+    - dns 
+    - drop 
+    - tcp
+    - flow
+    - port-distribution 
+    - icmp 
+    - httpV2
+    dashboards:
+      enabled: true
+      namespace: "monitoring"
+
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: "prometheus"
+
+operator:
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: "prometheus"

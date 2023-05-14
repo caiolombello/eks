@@ -9,14 +9,25 @@ resource "kubernetes_namespace" "amazon_cloudwatch" {
 }
 
 resource "kubernetes_service_account" "cloudwatch_agent" {
+  automount_service_account_token = true
   metadata {
     name      = "cloudwatch-agent"
     namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
   }
+}
 
-  depends_on = [
-    kubernetes_namespace.amazon_cloudwatch
-  ]
+resource "kubernetes_secret" "cloudwatch_agent_secret" {
+  type = "kubernetes.io/service-account-token"
+  metadata {
+    name      = "cloudwatch-agent-token"
+    namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
+    annotations = {
+      "kubernetes.io/service-account.name" = kubernetes_service_account.cloudwatch_agent.metadata[0].name
+    }
+  }
+  depends_on = [ 
+    kubernetes_service_account.cloudwatch_agent
+    ]
 }
 
 resource "kubernetes_cluster_role" "cloudwatch_agent_role" {

@@ -19,6 +19,7 @@ resource "helm_release" "kube_prometheus_stack" {
 
   depends_on = [
     kubernetes_namespace.monitoring,
+    helm_release.cilium,
     # kubernetes_persistent_volume.prometheus_pv
   ]
 }

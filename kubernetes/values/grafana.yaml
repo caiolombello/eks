@@ -95,9 +95,9 @@ datasources:
         lokiSearch:
           datasourceUid: 'loki'
     - name: Hubble
-      uid: hubble
+      uid: Hubble
       type: isovalent-hubble-datasource
-      url: http://hubble-relay.kube-system.svc.cluster.local
+      url: hubble-relay.monitoring.svc.cluster.local:4245
       access: proxy
       isDefault: false
       jsonData:

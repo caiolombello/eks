@@ -72,7 +72,7 @@ resource "aws_eks_node_group" "workers" {
   }
 
   dynamic "taint" {
-    for_each = lookup(each.value, "taints", null) != null ? each.value["taints"] : []
+    for_each = var.taints
 
     content {
       key    = taint.value["key"]
