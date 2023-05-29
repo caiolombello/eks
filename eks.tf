@@ -71,6 +71,13 @@ resource "aws_eks_node_group" "workers" {
     max_unavailable = each.value["desired_capacity"] # Desired max number of unavailable worker nodes during node group update.
   }
 
+  encryption_config {
+    provider {
+      key_arn = aws_kms_key.kms_key.arn
+    }
+    resources = ["secrets"]
+  }
+
   dynamic "taint" {
     for_each = var.taints
 
