@@ -98,10 +98,10 @@ variable "node_groups" {
   description = "Map de maps para criação dos node groups. Exemplo: `node_groups = { example = { ... } }`."
   type        = any
   default = {
-    DevOps = {
-      desired_capacity = 2
-      max_capacity     = 3
-      min_capacity     = 2
+    Engie = {
+      desired_capacity = 3
+      max_capacity     = 4
+      min_capacity     = 3
       instance_types   = ["t3a.medium"]
       capacity_type    = "ON_DEMAND"
       disk_size        = 10

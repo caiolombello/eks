@@ -21,6 +21,14 @@ resource "aws_eks_cluster" "this" {
     endpoint_public_access  = true
     security_group_ids      = [aws_security_group.cluster.id]
   }
+
+  encryption_config {
+    provider {
+      key_arn = aws_kms_key.kms_key.arn
+    }
+    resources = ["secrets"]
+  }
+
   tags = var.resource_tags
 }
 
@@ -69,13 +77,6 @@ resource "aws_eks_node_group" "workers" {
 
   update_config {
     max_unavailable = each.value["desired_capacity"] # Desired max number of unavailable worker nodes during node group update.
-  }
-
-  encryption_config {
-    provider {
-      key_arn = aws_kms_key.kms_key.arn
-    }
-    resources = ["secrets"]
   }
 
   dynamic "taint" {

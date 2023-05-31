@@ -94,16 +94,16 @@ datasources:
           enabled: true
         lokiSearch:
           datasourceUid: 'loki'
-    - name: Hubble
-      uid: Hubble
-      type: isovalent-hubble-datasource
-      url: hubble-relay.monitoring.svc.cluster.local:4245
-      access: proxy
-      isDefault: false
-      jsonData:
-        timeInterval: "5s"
-        prometheusDatasourceUid: "prometheus"
-        tempoDatasourceUid: "tempo"
+    # - name: Hubble
+    #   uid: Hubble
+    #   type: isovalent-hubble-datasource
+    #   url: hubble-relay.monitoring.svc.cluster.local:4245
+    #   access: proxy
+    #   isDefault: false
+    #   jsonData:
+    #     timeInterval: "5s"
+    #     prometheusDatasourceUid: "prometheus"
+    #     tempoDatasourceUid: "tempo"
 
 dashboardProviders:
   dashboardproviders.yaml:
@@ -425,7 +425,7 @@ dashboardsConfigMaps:
   # flows-by-protocol: flows-by-protocol
 
 plugins:
-  - isovalent-hubble-datasource
+  # - isovalent-hubble-datasource
   - grafana-piechart-panel
 
 alerting: 

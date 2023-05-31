@@ -7,3 +7,7 @@ provider "helm" {
     config_path = "../kubeconfig.yaml"
   }
 }
+
+resource "kubernetes_manifest" "serviceMonitorCRD" {
+  manifest = yamldecode(file("ServiceMonitorCRD.yaml"))
+}

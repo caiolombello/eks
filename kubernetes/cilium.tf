@@ -4,11 +4,11 @@ resource "helm_release" "cilium" {
   repository = "https://helm.cilium.io/"
   chart      = "cilium"
   version    = "1.13.2"
-  values = [file("${path.module}/values/cilium.yaml")]
+  values     = [file("${path.module}/values/cilium.yaml")]
 
-  # depends_on = [ 
-  #   helm_release.kube_prometheus_stack 
-  # ]
+  depends_on = [
+    kubernetes_manifest.serviceMonitorCRD
+  ]
 }
 
 resource "null_resource" "restart_pods" {
@@ -16,7 +16,7 @@ resource "null_resource" "restart_pods" {
 
   provisioner "local-exec" {
     command = <<EOF
-      kubectl get pods --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,HOSTNETWORK:.spec.hostNetwork --no-headers=true | grep '<none>' | awk '{print "-n "$1" "$2}' | xargs -L 1 -r kubectl delete pod
+      kubectl get pods --kubeconfig ../kubeconfig.yaml --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,HOSTNETWORK:.spec.hostNetwork --no-headers=true | grep '<none>' | awk '{print "-n "$1" "$2}' | xargs -L 1 -r kubectl delete pod
     EOF
   }
 }

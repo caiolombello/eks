@@ -25,9 +25,9 @@ resource "kubernetes_secret" "cloudwatch_agent_secret" {
       "kubernetes.io/service-account.name" = kubernetes_service_account.cloudwatch_agent.metadata[0].name
     }
   }
-  depends_on = [ 
+  depends_on = [
     kubernetes_service_account.cloudwatch_agent
-    ]
+  ]
 }
 
 resource "kubernetes_cluster_role" "cloudwatch_agent_role" {

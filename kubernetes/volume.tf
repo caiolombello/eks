@@ -11,7 +11,7 @@
 #     capacity = {
 #       storage = "10Gi"
 #     }
-    
+
 #     access_modes = ["ReadWriteOnce"]
 #     persistent_volume_reclaim_policy = "Retain"    
 #     persistent_volume_source {

@@ -9,8 +9,8 @@ resource "helm_release" "kube_prometheus_stack" {
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
   version    = "41.5.1"
-  namespace = kubernetes_namespace.monitoring.metadata[0].name
-  values = [file("${path.module}/values/kube-prometheus-stack.yaml")]
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  values     = [file("${path.module}/values/kube-prometheus-stack.yaml")]
 
   # set {
   #   name = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
@@ -29,8 +29,8 @@ resource "helm_release" "prometheus_adapter" {
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "prometheus-adapter"
   version    = "4.2.0"
-  namespace = kubernetes_namespace.monitoring.metadata[0].name
-  values = [file("${path.module}/values/prometheus-adapter.yaml")]
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  values     = [file("${path.module}/values/prometheus-adapter.yaml")]
 
   depends_on = [
     kubernetes_namespace.monitoring,
@@ -44,15 +44,15 @@ resource "helm_release" "grafana" {
   repository = "https://grafana.github.io/helm-charts"
   chart      = "grafana"
   version    = "6.56.1"
-  namespace = kubernetes_namespace.monitoring.metadata[0].name
-  values = [file("${path.module}/values/grafana.yaml")]
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  values     = [file("${path.module}/values/grafana.yaml")]
 
   depends_on = [
     kubernetes_namespace.monitoring,
     helm_release.cilium,
     helm_release.kube_prometheus_stack,
     kubernetes_config_map.app_overview_dashboard,
-    kubernetes_config_map.homepage_dashboard
+    kubernetes_config_map.homepage_dashboard,
   ]
 }
 
@@ -61,8 +61,8 @@ resource "helm_release" "tempo" {
   repository = "https://grafana.github.io/helm-charts"
   chart      = "tempo"
   version    = "1.2.1"
-  namespace = kubernetes_namespace.monitoring.metadata[0].name
-  values = [file("${path.module}/values/tempo.yaml")]
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  values     = [file("${path.module}/values/tempo.yaml")]
 
   depends_on = [
     kubernetes_namespace.monitoring,
@@ -76,8 +76,8 @@ resource "helm_release" "loki" {
   repository = "https://grafana.github.io/helm-charts"
   chart      = "loki-stack"
   version    = "2.9.10"
-  namespace = kubernetes_namespace.monitoring.metadata[0].name
-  values = [file("${path.module}/values/loki.yaml")]
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  values     = [file("${path.module}/values/loki.yaml")]
 
   depends_on = [
     kubernetes_namespace.monitoring,
@@ -90,8 +90,18 @@ resource "helm_release" "promtail" {
   repository = "https://grafana.github.io/helm-charts"
   chart      = "promtail"
   version    = "6.11.1"
-  namespace = kubernetes_namespace.monitoring.metadata[0].name
-  values = [file("${path.module}/values/promtail.yaml")]
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  values     = [file("${path.module}/values/promtail.yaml")]
+
+  set {
+    name  = "podSecurityContext.runAsUser"
+    value = "1000"
+  }
+
+  set {
+    name  = "podSecurityContext.runAsGroup"
+    value = "3000"
+  }
 
   depends_on = [
     kubernetes_namespace.monitoring,

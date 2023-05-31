@@ -1,11 +1,11 @@
 locals {
-  homepage_json = jsondecode(file("dashboards/homepage.json"))
-  app_overview_json = jsondecode(file("dashboards/app-overview.json"))
-  cilium_dashboard_json = jsondecode(file("dashboards/cilium-dashboard.json"))
-  hubble_dashboard_json = jsondecode(file("dashboards/hubble-dashboard.json"))
+  homepage_json                                   = jsondecode(file("dashboards/homepage.json"))
+  app_overview_json                               = jsondecode(file("dashboards/app-overview.json"))
+  cilium_dashboard_json                           = jsondecode(file("dashboards/cilium-dashboard.json"))
+  hubble_dashboard_json                           = jsondecode(file("dashboards/hubble-dashboard.json"))
   grafana_hubble_l7_http_metrics_by_workload_json = jsondecode(file("dashboards/grafana-hubble-l7-http-metrics-by-workload.json"))
-  flows_by_protocol_json = jsondecode(file("dashboards/flows-by-protocol.json"))
-  http_connectivity_json = jsondecode(file("dashboards/http-connectivity.json"))
+  flows_by_protocol_json                          = jsondecode(file("dashboards/flows-by-protocol.json"))
+  http_connectivity_json                          = jsondecode(file("dashboards/http-connectivity.json"))
 }
 
 resource "kubernetes_config_map" "app_overview_dashboard" {
