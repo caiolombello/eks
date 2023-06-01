@@ -1,25 +1,25 @@
-resource "helm_release" "cilium" {
-  name       = "cilium"
-  namespace  = "monitoring"
-  repository = "https://helm.cilium.io/"
-  chart      = "cilium"
-  version    = "1.13.2"
-  values     = [file("${path.module}/values/cilium.yaml")]
+# resource "helm_release" "cilium" {
+#   name       = "cilium"
+#   namespace  = "monitoring"
+#   repository = "https://helm.cilium.io/"
+#   chart      = "cilium"
+#   version    = "1.13.2"
+#   values     = [file("${path.module}/values/cilium.yaml")]
 
-  depends_on = [
-    kubernetes_manifest.serviceMonitorCRD
-  ]
-}
+#   depends_on = [
+#     kubernetes_manifest.serviceMonitorCRD
+#   ]
+# }
 
-resource "null_resource" "restart_pods" {
-  depends_on = [helm_release.cilium]
+# resource "null_resource" "restart_pods" {
+#   depends_on = [helm_release.cilium]
 
-  provisioner "local-exec" {
-    command = <<EOF
-      kubectl get pods --kubeconfig ../kubeconfig.yaml --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,HOSTNETWORK:.spec.hostNetwork --no-headers=true | grep '<none>' | awk '{print "-n "$1" "$2}' | xargs -L 1 -r kubectl delete pod
-    EOF
-  }
-}
+#   provisioner "local-exec" {
+#     command = <<EOF
+#       kubectl get pods --kubeconfig ../kubeconfig.yaml --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,HOSTNETWORK:.spec.hostNetwork --no-headers=true | grep '<none>' | awk '{print "-n "$1" "$2}' | xargs -L 1 -r kubectl delete pod
+#     EOF
+#   }
+# }
 
 # resource "null_resource" "enable_security_group" {
 #   depends_on = [null_resource.restart_pods]

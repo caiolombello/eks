@@ -79,15 +79,15 @@ resource "aws_eks_node_group" "workers" {
     max_unavailable = each.value["desired_capacity"] # Desired max number of unavailable worker nodes during node group update.
   }
 
-  dynamic "taint" {
-    for_each = var.taints
+  # dynamic "taint" {
+  #   for_each = var.taints
 
-    content {
-      key    = taint.value["key"]
-      value  = taint.value["value"]
-      effect = taint.value["effect"]
-    }
-  }
+  #   content {
+  #     key    = taint.value["key"]
+  #     value  = taint.value["value"]
+  #     effect = taint.value["effect"]
+  #   }
+  # }
 
   # lifecycle { # Optional: Allow external changes without Terraform plan difference
   #   create_before_destroy = true
@@ -123,4 +123,14 @@ output "cluster_name" {
 output "cluster_endpoint" {
   description = "Endpoint da API do cluster Kubernetes."
   value       = aws_eks_cluster.this.endpoint
+}
+
+output "cluster_certificate_authority" {
+  description = "Cluster Certificate Authority"
+  value = aws_eks_cluster.this.certificate_authority.0.data
+}
+
+output "environment" {
+  description = "Environment"
+  value = var.resource_tags["Environment"]
 }

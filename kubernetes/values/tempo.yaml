@@ -8,4 +8,3 @@ serviceMonitor:
   additionalLabels:
     release: prometheus
   interval: 30s
-  

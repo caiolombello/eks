@@ -41,4 +41,5 @@ override.tf.json
 
 !kubernetes
 !kubeconfig.tpl
+!kubeconfig.tf
 !kube-prometheus-stack*

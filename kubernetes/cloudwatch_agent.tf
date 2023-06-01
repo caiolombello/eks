@@ -8,27 +8,28 @@ resource "kubernetes_namespace" "amazon_cloudwatch" {
   }
 }
 
-resource "kubernetes_service_account" "cloudwatch_agent" {
-  automount_service_account_token = true
-  metadata {
-    name      = "cloudwatch-agent"
-    namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
-  }
-}
-
 resource "kubernetes_secret" "cloudwatch_agent_secret" {
   type = "kubernetes.io/service-account-token"
   metadata {
     name      = "cloudwatch-agent-token"
     namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
     annotations = {
-      "kubernetes.io/service-account.name" = kubernetes_service_account.cloudwatch_agent.metadata[0].name
+      "kubernetes.io/service-account.name" = "cloudwatch-agent"
     }
   }
-  depends_on = [
-    kubernetes_service_account.cloudwatch_agent
-  ]
 }
+
+resource "kubernetes_service_account" "cloudwatch_agent" {
+  metadata {
+    name      = "cloudwatch-agent"
+    namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
+  }
+
+  secret {
+    name = kubernetes_secret.cloudwatch_agent_secret.metadata[0].name
+  }
+}
+
 
 resource "kubernetes_cluster_role" "cloudwatch_agent_role" {
   metadata {
@@ -96,6 +97,7 @@ resource "kubernetes_cluster_role_binding" "cloudwatch_agent_role_binding" {
 
   depends_on = [
     kubernetes_service_account.cloudwatch_agent,
+    kubernetes_secret.cloudwatch_agent_secret,
     kubernetes_cluster_role.cloudwatch_agent_role,
     kubernetes_namespace.amazon_cloudwatch
   ]
@@ -280,6 +282,7 @@ resource "kubernetes_manifest" "cloudwatch_agent" {
 
   depends_on = [
     kubernetes_namespace.amazon_cloudwatch,
+    kubernetes_secret.cloudwatch_agent_secret,
     kubernetes_service_account.cloudwatch_agent,
     kubernetes_config_map.cwagentconfig
   ]

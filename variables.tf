@@ -42,7 +42,7 @@ variable "private_subnets" {
 variable "cluster_version" {
   description = "Versão do Kubernetes para o cluster EKS."
   type        = string
-  default     = "1.26"
+  default     = "1.27"
 }
 
 variable "cluster_enabled_log_types" {

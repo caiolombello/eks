@@ -1,0 +1,22 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: enforce-seccomp
+spec:
+  background: false
+  validationFailureAction: Enforce
+  rules:
+  - name: check-seccomp
+    match:
+      resources:
+        kinds:
+        - Pod
+        selector:
+          matchExpressions:
+          - {key: app.kubernetes.io/name, operator: NotIn, values: ["tempo", "prometheus-adapter"]}
+    mutate:
+      patchStrategicMerge:
+        spec:
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
