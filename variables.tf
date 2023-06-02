@@ -102,7 +102,7 @@ variable "node_groups" {
       desired_capacity = 3
       max_capacity     = 4
       min_capacity     = 3
-      instance_types   = ["t3a.medium"]
+      instance_types   = ["m7g.medium"]
       capacity_type    = "ON_DEMAND"
       disk_size        = 10
     }

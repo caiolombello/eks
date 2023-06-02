@@ -23,9 +23,8 @@ resource "null_resource" "disallow_root_user" {
     command = "kubectl apply --kubeconfig ../kubeconfig.yaml -f ${path.module}/policies"
   }
 
-  depends_on = [
-    helm_release.kyverno, 
-    # helm_release.cilium
-  ]
+  triggers = {
+    kyverno_id = helm_release.kyverno.id
+  }
 }
 
