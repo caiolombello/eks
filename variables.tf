@@ -1,6 +1,5 @@
 variable "aws_region" {
   description = "The AWS region your resources will be deployed"
-  default     = "us-east-1"
 }
 
 variable "resource_tags" {
@@ -9,6 +8,7 @@ variable "resource_tags" {
   default = {
     Environment = "dev",
     Terraform   = "true"
+    Owner       = "Caio Barbieri"
     Name        = "eks-devops"
   }
 }
@@ -98,11 +98,11 @@ variable "node_groups" {
   description = "Map de maps para criação dos node groups. Exemplo: `node_groups = { example = { ... } }`."
   type        = any
   default = {
-    Engie = {
+    DevOps = {
       desired_capacity = 3
       max_capacity     = 4
       min_capacity     = 3
-      instance_types   = ["m7g.medium"]
+      instance_types   = ["m7g.xlarge"]
       capacity_type    = "ON_DEMAND"
       disk_size        = 10
     }
@@ -165,5 +165,28 @@ variable "iam_workers_role_name" {
   default     = ""
 }
 
+# Autoscaling
+variable "scaling_period" {
+  type    = list(string)
+  default = ["600", "1200", "1800"]
+}
 
+# Logging
+variable "cloudwatch_namespace" {
+  description = "Namespace"
+  type        = string
+  default     = "amazon-cloudwatch"
+}
 
+variable "fluent_bit" {
+  description = "Map para o fluent_bit"
+  type        = any
+  default = {
+    DevOps = {
+      "http.server" = "off"
+      "http.port"   = "2020"
+      "read.head"   = "On"
+      "read.tail"   = "Off"
+    }
+  }
+}

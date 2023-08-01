@@ -14,11 +14,11 @@ module "vpc" {
   tags = var.resource_tags
 
   public_subnet_tags = {
-    "${local.name_suffix}-${local.environment}-public" = "shared"
+    "${local.name_suffix}-${local.environment}-public" = "true"
   }
 
   private_subnet_tags = {
-    "${local.name_suffix}-${local.environment}-private" = "shared"
+    "${local.name_suffix}-${local.environment}-private" = "true"
   }
 }
 
@@ -82,7 +82,7 @@ resource "aws_security_group_rule" "cluster_https_worker_ingress" {
 data "aws_subnets" "subnet-public" {
   filter {
     name   = "tag:${local.name_suffix}-${local.environment}-public"
-    values = ["shared"]
+    values = ["true"]
   }
   depends_on = [
     module.vpc
@@ -93,7 +93,7 @@ data "aws_subnets" "subnet-public" {
 data "aws_subnets" "subnet-private" {
   filter {
     name   = "tag:${local.name_suffix}-${local.environment}-private"
-    values = ["shared"]
+    values = ["true"]
   }
 
   filter {

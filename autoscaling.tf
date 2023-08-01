@@ -52,19 +52,18 @@ resource "aws_autoscaling_policy" "cpu_scale_up_policy" {
 }
 
 # Memory Autoscale
-# Memory Alarm
 resource "aws_cloudwatch_metric_alarm" "node_memory_utilization_alarm" {
-  for_each = var.node_groups
+  for_each = toset(var.scaling_period)
 
   alarm_name          = "node_memory_utilization_high"
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
+  evaluation_periods  = "1" #O número de períodos durante os quais os dados são comparados com o limite especificado.
   threshold           = "80"
   alarm_description   = "This metric checks for memory usage above 80%"
   alarm_actions       = [aws_autoscaling_policy.memory_scale_up_policy[each.key].arn]
   ok_actions          = [aws_autoscaling_policy.memory_scale_down_policy[each.key].arn]
 
-  period      = 300
+  period      = 60
   metric_name = "node_memory_utilization"
   namespace   = "ContainerInsights"
   dimensions = {
@@ -82,12 +81,12 @@ resource "aws_cloudwatch_metric_alarm" "node_memory_utilization_alarm" {
 
 # Autoscaling Policies
 resource "aws_autoscaling_policy" "memory_scale_up_policy" {
-  for_each               = var.node_groups
+  for_each               = toset(var.scaling_period)
   name                   = "${each.key}-memory-scale-up-policy"
-  autoscaling_group_name = aws_eks_node_group.workers[each.key].resources[0].autoscaling_groups[0].name
+  autoscaling_group_name = aws_eks_node_group.workers["DevOps"].resources[0].autoscaling_groups[0].name
   adjustment_type        = "ChangeInCapacity"
   scaling_adjustment     = 1
-  cooldown               = 300
+  cooldown               = each.key
 
   depends_on = [
     aws_eks_node_group.workers
@@ -95,12 +94,12 @@ resource "aws_autoscaling_policy" "memory_scale_up_policy" {
 }
 
 resource "aws_autoscaling_policy" "memory_scale_down_policy" {
-  for_each               = var.node_groups
+  for_each               = toset(var.scaling_period)
   name                   = "${each.key}-memory-scale-down-policy"
-  autoscaling_group_name = aws_eks_node_group.workers[each.key].resources[0].autoscaling_groups[0].name
+  autoscaling_group_name = aws_eks_node_group.workers["DevOps"].resources[0].autoscaling_groups[0].name
   adjustment_type        = "ChangeInCapacity"
   scaling_adjustment     = -1
-  cooldown               = 300
+  cooldown               = each.key
 
   depends_on = [
     aws_eks_node_group.workers

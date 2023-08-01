@@ -40,6 +40,7 @@ override.tf.json
 *kube*
 
 !kubernetes
-!kubeconfig.tpl
+!kubeconfig*.tpl
 !kubeconfig.tf
 !kube-prometheus-stack*
+default-provisioner.yaml

@@ -1,8 +1,11 @@
 # Managed Kubernetes on AWS
 
-- [x]  Deploy CloudWatch Agent for Node Memory Autoscaling
+- [x] Deploy Karpenter for Node Memory Autoscaling
 - [x] Autoscaling Nodes by CPU
 - [x] Create user for AWS cluster access
+- [x] Bottlerocket OS
+- [x] Graviton instance type
+- [x] KMS Encrypt EKS Secrets
 
 ## Kubernetes Configuration
 

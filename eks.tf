@@ -1,3 +1,39 @@
+# Launch Template
+resource "aws_launch_template" "nodes" {
+  name_prefix   = local.name_suffix
+  image_id      = data.aws_ssm_parameter.bottlerocket_ami.value
+  instance_type = var.node_groups["DevOps"]["instance_types"][0]
+  tags          = var.resource_tags
+
+  user_data = base64encode(<<USERDATA
+[settings.kubernetes]
+api-server = "${aws_eks_cluster.this.endpoint}"
+cluster-certificate = "${aws_eks_cluster.this.certificate_authority.0.data}"
+cluster-name = "${aws_eks_cluster.this.name}"
+
+[settings.kubernetes.system-reserved]
+cpu = "10m"
+memory = "100Mi"
+ephemeral-storage = "1Gi"
+USERDATA
+  )
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_type = "gp2"
+      volume_size = var.node_groups["DevOps"]["disk_size"]
+    }
+  }
+
+  metadata_options {
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+    http_endpoint               = "enabled"
+  }
+}
+
 # Create EKS Cluster
 resource "aws_eks_cluster" "this" {
   name                      = "${local.name_suffix}-${local.environment}"
@@ -55,19 +91,24 @@ resource "aws_eks_addon" "CSI" {
 
 # Node Groups
 resource "aws_eks_node_group" "workers" {
-  for_each             = local.node_groups_expanded
-  node_group_name      = lookup(each.value, "name", null) == null ? "nodes-${local.name_suffix}-${local.environment}" : null
-  cluster_name         = aws_eks_cluster.this.id
-  node_role_arn        = aws_iam_role.workers.arn # IAM Role that provides permissions for the EKS Node Group.
-  subnet_ids           = data.aws_subnets.subnet-private.ids
-  ami_type             = lookup(each.value, "ami_type", null) # Type of Amazon Machine Image (AMI) associated with the EKS Node Group
-  disk_size            = lookup(each.value, "disk_size", null)
-  instance_types       = lookup(each.value, "instance_types", null)
-  release_version      = lookup(each.value, "ami_release_version", null)  # AMI version of the EKS Node Group. Defaults to latest version for Kubernetes version.
+  for_each        = local.node_groups_expanded
+  node_group_name = lookup(each.value, "name", null) == null ? "nodes-${local.name_suffix}-${local.environment}" : null
+  cluster_name    = aws_eks_cluster.this.id
+  node_role_arn   = aws_iam_role.workers.arn # IAM Role that provides permissions for the EKS Node Group.
+  subnet_ids      = data.aws_subnets.subnet-private.ids
+  # ami_type             = lookup(each.value, "ami_type", null) # Type of Amazon Machine Image (AMI) associated with the EKS Node Group
+  # disk_size            = lookup(each.value, "disk_size", null)
+  # instance_types       = lookup(each.value, "instance_types", null)
+  # release_version      = lookup(each.value, "ami_release_version", null)  # AMI version of the EKS Node Group. Defaults to latest version for Kubernetes version.
   capacity_type        = lookup(each.value, "capacity_type", null)        # Type of capacity associated with the EKS Node Group. Valid values: ON_DEMAND, SPOT
   force_update_version = lookup(each.value, "force_update_version", null) # Force version update if existing pods are unable to be drained due to a pod disruption budget issue.
   labels               = lookup(var.node_groups[each.key], "k8s_labels", {})
   tags                 = var.resource_tags
+
+  launch_template {
+    id      = aws_launch_template.nodes.id
+    version = aws_launch_template.nodes.latest_version
+  }
 
   scaling_config {
     desired_size = each.value["desired_capacity"]
@@ -106,7 +147,7 @@ resource "aws_eks_node_group" "workers" {
 
 # Create Kubeconfig
 resource "local_file" "kubeconfig" {
-  content = templatefile("kubeconfig.tpl", {
+  content = templatefile("${path.module}/templates/kubeconfig-aws.tpl", {
     endpoint                   = aws_eks_cluster.this.endpoint
     certificate_authority_data = aws_eks_cluster.this.certificate_authority.0.data
     cluster_name               = aws_eks_cluster.this.name
@@ -127,10 +168,10 @@ output "cluster_endpoint" {
 
 output "cluster_certificate_authority" {
   description = "Cluster Certificate Authority"
-  value = aws_eks_cluster.this.certificate_authority.0.data
+  value       = aws_eks_cluster.this.certificate_authority.0.data
 }
 
 output "environment" {
   description = "Environment"
-  value = var.resource_tags["Environment"]
+  value       = var.resource_tags["Environment"]
 }

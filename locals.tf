@@ -11,9 +11,9 @@ locals {
   # Node groups
   node_groups_expanded = { for k, v in var.node_groups : k => merge(
     {
-      desired_capacity = 4
+      desired_capacity = 3
       max_capacity     = 6
-      min_capacity     = 4
+      min_capacity     = 3
     }, v)
   }
 
